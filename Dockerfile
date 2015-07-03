@@ -13,7 +13,7 @@ RUN apt-get update && \
 	apt-get autoremove && \
 	apt-get autoclean && \
 	apt-get -y install nginx-full && \
-	apt-get -y install build-essential python-dev libxml2-dev python-pip unzip wget && \
+	apt-get -y install build-essential python-dev libxml2-dev python-pip unzip wget supervisor && \
 	pip install setuptools --no-use-wheel --upgrade && \
 	PIPPATH=`which pip` && \
 	$PIPPATH install --upgrade uwsgi && \
@@ -39,6 +39,9 @@ RUN ln -s /etc/nginx/sites-available/web2py /etc/nginx/sites-enabled/web2py && \
 COPY web2py.ini /etc/uwsgi/web2py.ini
 COPY uwsgi-emperor.conf /etc/init/uwsgi-emperor.conf
 
+# copy Supervisor config file from repo
+COPY supervisor-app.conf /etc/supervisor/conf.d/
+
 # get and install web2py
 RUN mkdir $INSTALL_DIR && cd $INSTALL_DIR && \
 	wget http://web2py.com/examples/static/web2py_src.zip && \
@@ -47,12 +50,12 @@ RUN mkdir $INSTALL_DIR && cd $INSTALL_DIR && \
 	mv web2py/handlers/wsgihandler.py web2py/wsgihandler.py && \
 	chown -R www-data:www-data web2py && \
 	cd $W2P_DIR && \
+	sudo -u www-data python -c "from gluon.main import save_password; save_password('$PW',80)" && \
 	sudo -u www-data python -c "from gluon.main import save_password; save_password('$PW',443)" && \
-	start uwsgi-emperor && \
-	/etc/init.d/nginx restart
+	sudo nginx
+ 
+EXPOSE 80 443 8000
 
-EXPOSE 80 443
+WORKDIR $W2P_DIR 
 
-WORKDIR $W2P_DIR
-
-CMD ["python", "web2py.py"]
+CMD ["supervisord", "-n"]
