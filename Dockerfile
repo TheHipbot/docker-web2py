@@ -25,8 +25,7 @@ RUN apt-get update && \
 	apt-get -y install nginx-full && \
 	apt-get -y install build-essential python-dev libxml2-dev python-pip unzip wget supervisor && \
 	pip install setuptools --no-use-wheel --upgrade && \
-	PIPPATH=`which pip` && \
-	$PIPPATH install --upgrade uwsgi && \
+	pip install --upgrade uwsgi && \
 	apt-get clean && \
 	mkdir /etc/nginx/conf.d/web2py
 
